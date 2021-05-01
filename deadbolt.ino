@@ -1,5 +1,4 @@
-#include <ESP8266WiFi.h>
-// Load Wi-Fi library
+
 #include <ESP8266WiFi.h>
 
 // Replace with your network credentials

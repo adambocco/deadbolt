@@ -2,65 +2,130 @@
 #include <ESP8266mDNS.h>
 #include <ArduinoOTA.h>
 #include <ESP8266WebServer.h>
-#include <EEPROM.h>
+#include <SPI.h>
+#include <MFRC522.h>
 
-#ifndef STASSID
+#define BUZZER D8
+#define DEADBOLT D1
+#define RST_PIN D3 
+#define SS_PIN D4
 #define STASSID "Honda-ASUS"
 #define STAPSK  "mobydick"
-#define MP1 D1
-#define MP2 D2
-#define MP3 D6
-#define MP4 D7
-#endif
+#define PINCODE "123456"
+#define UNLOCKED_DELAY 6000;
 
-const char* ssid = STASSID;
-const char* password = STAPSK;
-int pos;
-int addr = 0;
-int interval = 10;
+// const char* ssid = STASSID;
+// const char* password = STAPSK;
+
+MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 
 ESP8266WebServer server(80);
 
+void handleRoot();              // function prototypes for HTTP handlers
+void handleNotFound();
+void handlePinAuth();
+void handleUnlock();
+void handleRFID();
+
 const char* www_username = "scoped22";
-const char* www_password = "narusrocks";
+const char* www_password = "mobydick";
 
-String webPage1 = 
-  "<!DOCTYPE HTML>"
-  "<html style='background-color:black;' lang='en'>"
-  "<head>"
-  "<meta charset='utf-8' />"
-  "<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1' />"
-  "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
-  "<title>LED CONTROLLER</title>"
-  "<link href='https://fonts.googleapis.com/css?family=Lato:400,900&subset=latin-ext' rel='stylesheet'>"
-  "<link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>"
-  "<style>"
-  "</style>"
-  "</head>"
-  
-  "<body>";
+String htmlHead "<!DOCTYPE html>" + 
+                "<html lang=\"en\">" + 
+                "<head>" + 
+                "  <meta charset=\"UTF-8\">" + 
+                "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">" + 
+                "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" + 
+                "  <title>Document</title>" + 
+                "</head>" + 
+                "<body>";
 
-String webPage2 =   
-  "<h1><a style='text-decoration:none;border:3px solid black;border-radius:10px;background-color:#5AF;color:black;float:left;position:relative;margin:1em;' href='http://192.168.2.149/off'>LEFT</a></h1>"
-  "<h1><a style='text-decoration:none;border:3px solid black;border-radius:10px;background-color:#5AF;color:black;float:left;position:relative;margin:1em;' href='http://192.168.2.149/on'>RIGHT</a></h1>"
-  "</body>";
-  
+String htmlNumberPad = "  <h1 id=\"displayPin\" style=\"text-align:center;height:30px\"></h1>" + 
+                        "    <div>" + 
+                        "      <button onclick=\"addNum(1)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">1</button>" + 
+                        "      <button onclick=\"addNum(2)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">2</button>" + 
+                        "      <button onclick=\"addNum(3)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">3</button>" + 
+                        "    </div>" + 
+                        "    <div>" + 
+                        "      <button onclick=\"addNum(4)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">4</button>" + 
+                        "      <button onclick=\"addNum(5)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">5</button>" + 
+                        "      <button onclick=\"addNum(6)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">6</button>" + 
+                        "    </div>" + 
+                        "    <div>" + 
+                        "      <button onclick=\"addNum(7)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">7</button>" + 
+                        "      <button onclick=\"addNum(8)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">8</button>" + 
+                        "      <button onclick=\"addNum(9)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">9</button>" + 
+                        "    </div>" + 
+                        "    <div>" + 
+                        "      <button onclick=\"clearNums()\" style=\"background-color:red; font-size:1.5em; width:30%;padding:0.5em;\">X</button>" + 
+                        "      <button onclick=\"addNum(0)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">0</button>" + 
+                        "      <button id=\"submitPin\" type=\"button\" style=\"background-color:green;font-size:1.5em; width:30%;padding:0.5em;\">&gt</button>" + 
+                        "    </div>";
+
+String htmlDeadboltStatus = "    <h1 id=\"statusSection\" style=\"text-align:center;color:maroon;\"></h4>";
+
+String htmlJavascript = "<script>" + 
+                        "  let displayPin = document.getElementById(\"displayPin\");" + 
+                        "  let submitPin = document.getElementById(\"submitPin\");" + 
+                        "  let statusSection = document.getElementById(\"statusSection\");" + 
+                        "  function addNum(num) {" + 
+                        "    console.log(\"adding: \", num)" + 
+                        "    if (displayPin.innerHTML.length < 6) {" + 
+                        "      displayPin.innerHTML += num" + 
+                        "    }" + 
+                        "  }" + 
+                        "  function clearNums() {" + 
+                        "    console.log(\"clearing\")" + 
+                        "    displayPin.innerHTML = \"\"" + 
+                        "  }" + 
+                        "  function sendPinCode() {" + 
+                        "    let XHR = new XMLHttpRequest();" + 
+                        "    XHR.onload = () => {" + 
+                        "      let body = JSON.parse(this.responseText);" + 
+                        "      if (this.status == 200) {" + 
+                        "        if (body[\'response\'] == \"Unlocked\") {" + 
+                        "          statusSection.innerHTML = body[\'response\'];" + 
+                        "        }" + 
+                        "      } else if (this.status == 400) {" + 
+                        "        statusSection.innerHTML = body[\'response\'];" + 
+                        "      } else {" + 
+                        "        statusSection.innerHTML = \"Error\";" + 
+                        "      }" + 
+                        "    }" + 
+                        "    XHR.onerror = () => { alert(\"Server Error\") };" + 
+                        "    XHR.open(\"POST\", \"http://\" + window.location.hostname + \"/unlock\");" + 
+                        "    XHR.send(JSON.stringify({ \"pin\": displayPin.innerText }));" + 
+                        "  }" + 
+                        "  submitPin.onclick = sendPinCode;" + 
+                        "</script>"
+
+String htmlBottom = "</body>" +
+                    "</html>";
+
+
+
+void unlock() {
+    digitalWrite(DEADBOLT, HIGH);
+    delay(UNLOCKED_DELAY);
+    digitalWrite(DEADBOLT, LOW);
+}
 
 void setup() {
-  Serial.begin(115200);
-  pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(MP1, OUTPUT);
-  pinMode(MP2, OUTPUT);
-  pinMode(MP3, OUTPUT);
-  pinMode(MP4, OUTPUT);
-  digitalWrite(MP1, LOW);
-  digitalWrite(MP2, LOW);
-  digitalWrite(MP3, LOW);
-  digitalWrite(MP4, LOW);
-  EEPROM.begin(512);
-  EEPROM.get(addr, pos);
+
+  Serial.begin(115200);   // Initiate a serial communication
+  SPI.begin();      // Initiate  SPI bus
+  mfrc522.PCD_Init();   // Initiate MFRC522
+
+  // Initialize buzzer and deadbolt signal to ouputs, low
+  pinMode(DEADBOLT, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(DEADBOLT,LOW);
+  digitalWrite(BUZZER,LOW);
+
+
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  WiFi.begin(STASSID, STAPSK);
+
   if (WiFi.waitForConnectResult() != WL_CONNECTED) {
     Serial.println("WiFi Connect Failed! Rebooting...");
     delay(200);
@@ -87,89 +152,92 @@ void setup() {
   ArduinoOTA.setHostname("hondaesp");
   ArduinoOTA.setPassword("mobydick");
   
+  // <-------- API -------->
+  server.on("/", HTTP_GET, handleRoot);
+
+  server.on("/unlock", HTTP_POST, handleUnlock);
   
-  server.on("/", []() {
-    if (!server.authenticate(www_username, www_password)) {
-      return server.requestAuthentication();
-    }
-    server.send(200, "text/html", (webPage1+ "<p style='font-size: 46px;color:white;font-weight:bold;border:2px white solid;display:inline-block;margin:1em 0 0 2.6em;'>" + String(pos) + "</p>" +webPage2));
-  });
-  server.on("/on", []() {
-    digitalWrite(LED_BUILTIN, HIGH);
-    right(40);
-    server.send(200, "text/html", (webPage1 + "<p style='font-size: 46px;color:white;font-weight:bold;border:2px white solid;display:inline-block;margin:1em 0 0 2.6em;'>" + String(pos) + "</p>" + webPage2));
-  });
-  server.on("/off", []() {
-    digitalWrite(LED_BUILTIN, LOW);
-    left(40);
-    server.send(200, "text/html", (webPage1 + "<p style='font-size: 46px;color:white;font-weight:bold;border:2px white solid;display:inline-block;margin:1em 0 0 2.6em;'>" + String(pos) + "</p>" + webPage2));
-  });
+  server.onNotFound(handleNotFound);
+
   server.begin();
+  Serial.print("http://");
+  Serial.println(WiFi.localIP());
 
-  Serial.print("Open http://");
-  Serial.print(WiFi.localIP());
-  Serial.println("/ in your browser to see it working");
-}
-
-void halt() {
-  digitalWrite(MP1, LOW);
-  digitalWrite(MP2, LOW);
-  digitalWrite(MP3, LOW);
-  digitalWrite(MP4, LOW);
-}
-
-void right(int steps) {
-  pos+= steps;
-  EEPROM.put(addr, pos);
-  EEPROM.commit();
-  for (int i=0; i<steps; i++) {
-    digitalWrite(MP1, HIGH);
-    delay(interval);
-    digitalWrite(MP4, LOW);
-    delay(interval);
-    digitalWrite(MP2, HIGH);
-    delay(interval);
-    digitalWrite(MP1, LOW);
-    delay(interval);
-    digitalWrite(MP3, HIGH);
-    delay(interval);
-    digitalWrite(MP2, LOW);
-    delay(interval);
-    digitalWrite(MP4, HIGH);
-    delay(interval);
-    digitalWrite(MP3, LOW);
-    delay(interval);
-  }
-  halt();
-}
-
-void left(int steps) {
-  pos-= steps;
-  EEPROM.put(addr, pos);
-  EEPROM.commit();
-  for (int i=0; i<steps; i++) {
-    digitalWrite(MP4, HIGH);
-    delay(interval);
-    digitalWrite(MP1, LOW);
-    delay(interval);
-    digitalWrite(MP3, HIGH);
-    delay(interval);
-    digitalWrite(MP4, LOW);
-    delay(interval);
-    digitalWrite(MP2, HIGH);
-    delay(interval);
-    digitalWrite(MP3, LOW);
-    delay(interval);
-    digitalWrite(MP1, HIGH);
-    delay(interval);
-    digitalWrite(MP2, LOW);
-    delay(interval);
-  }
-  halt();
 }
 
 
 void loop() {
   ArduinoOTA.handle();
   server.handleClient();
+  handleRFID();
+}
+
+void handleRoot() {
+    server.send(200, "text/html", 
+                      htmlHead + 
+                      htmlNumberPad + 
+                      htmlDeadboltStatus +
+                      htmlJavascript +
+                      htmlBottom);
+}
+
+void handleUnlock() {
+    if (handlePinAuth()) {
+      unlock();
+    }
+}
+
+bool handlePinAuth() { 
+  if (!server.hasArg("pin")){     //Parameter not found
+    server.send(400, "application/json", "{'response':'Enter a pin'}"); 
+  }
+  else if (server.arg("pin") == PINCODE) {
+    server.send(200, "application/json", "{'response':'Unlocked'}");  
+    return true;
+  } 
+  else {
+    server.send(400, "application/json", "{'reponse': 'Incorrect pin'}");  
+  }
+  return false; 
+}
+
+void handleNotFound(){
+  server.send(404, "text/plain", "404: Not found"); // Send HTTP status 404 (Not Found) when there's no handler for the URI in the request
+}
+
+void handleRFID() {
+    if ( ! mfrc522.PICC_IsNewCardPresent()) 
+  {
+    Serial.println("No card");
+    return;
+  }
+  // Select one of the cards
+  if ( ! mfrc522.PICC_ReadCardSerial()) 
+  {
+    Serial.println("Can't read serial data");
+    return;
+  }
+  //Show UID on serial monitor
+  Serial.println();
+  Serial.print(" UID tag :");
+  String content= "";
+  byte letter;
+  for (byte i = 0; i < mfrc522.uid.size; i++) 
+  {
+     Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
+     Serial.print(mfrc522.uid.uidByte[i], HEX);
+     content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
+     content.concat(String(mfrc522.uid.uidByte[i], HEX));
+  }
+  content.toUpperCase();
+  Serial.println();
+  if (content.substring(1) == "B6 33 ED F8"||
+      content.substring(1)=="09 8F 68 99"||
+      content.substring(1)=="A9 81 AE 98"||
+      content.substring(1)=="49 3D A3 98"||
+      content.substring(1)== "16 17 EA F8" ||
+      content.substring(1)=="36 D4 2A F9") {
+        
+    unlock();
+  } 
 }
