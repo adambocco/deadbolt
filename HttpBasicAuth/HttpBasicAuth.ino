@@ -30,77 +30,82 @@ void handleRFID();
 const char* www_username = "scoped22";
 const char* www_password = "mobydick";
 
-String htmlHead = "<!DOCTYPE html>
-                <html lang=\"en\">
-                <head>
-                  <meta charset=\"UTF-8\">
-                  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
-                  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
-                  <title>Document</title>
-                </head>
-                <body>";
+String ptr = "<!DOCTYPE html>";
+        ptr += "<html lang=\"en\">";
+        ptr += "";
+        ptr += "<head>";
+        ptr += "  <meta charset=\"UTF-8\">";
+        ptr += "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">";
+        ptr += "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
+        ptr += "  <title>Document</title>";
+        ptr += "</head>";
+        ptr += "";
+        ptr += "<body>";
+        ptr += "  <h1 id=\"displayPin\" style=\"text-align:center;height:30px\"></h1>";
+        ptr += "    <div>";
+        ptr += "      <button onclick=\"addNum(1)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">1</button>";
+        ptr += "      <button onclick=\"addNum(2)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">2</button>";
+        ptr += "      <button onclick=\"addNum(3)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">3</button>";
+        ptr += "    </div>";
+        ptr += "    <div>";
+        ptr += "      <button onclick=\"addNum(4)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">4</button>";
+        ptr += "      <button onclick=\"addNum(5)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">5</button>";
+        ptr += "      <button onclick=\"addNum(6)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">6</button>";
+        ptr += "    </div>";
+        ptr += "    <div>";
+        ptr += "      <button onclick=\"addNum(7)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">7</button>";
+        ptr += "      <button onclick=\"addNum(8)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">8</button>";
+        ptr += "      <button onclick=\"addNum(9)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">9</button>";
+        ptr += "    </div>";
+        ptr += "    <div>";
+        ptr += "      <button onclick=\"clearNums()\" style=\"background-color:red; font-size:1.5em; width:30%;padding:0.5em;\">X</button>";
+        ptr += "      <button onclick=\"addNum(0)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">0</button>";
+        ptr += "      <button id=\"submitPin\" type=\"button\" style=\"background-color:green;font-size:1.5em; width:30%;padding:0.5em;\">&gt</button>";
+        ptr += "    </div>";
+        ptr += "    <h1 id=\"statusSection\" style=\"text-align:center;color:maroon;\">Locked</h4>";
+        ptr += "";
+        ptr += "<script>";
+        ptr += "  let displayPin = document.getElementById(\"displayPin\");";
+        ptr += "  let submitPin = document.getElementById(\"submitPin\");";
+        ptr += "  let statusSection = document.getElementById(\"statusSection\");";
+        ptr += "";
+        ptr += "  function addNum(num) {";
+        ptr += "    console.log(\"adding: \", num)";
+        ptr += "    if (displayPin.innerHTML.length < 6) {";
+        ptr += "      displayPin.innerHTML += num";
+        ptr += "    }";
+        ptr += "  }";
+        ptr += "";
+        ptr += "  function clearNums() {";
+        ptr += "    console.log(\"clearing\")";
+        ptr += "    displayPin.innerHTML = \"\"";
+        ptr += "  }";
+        ptr += "";
+        ptr += "  function sendPinCode() {";
+        ptr += "    let XHR = new XMLHttpRequest();";
+        ptr += "    XHR.onload = () => {";
+        ptr += "      let body = JSON.parse(this.responseText);";
+        ptr += "";
+        ptr += "      if (this.status == 200) {";
+        ptr += "        if (body[\'response\'] == \"Unlocked\") {";
+        ptr += "          statusSection.innerHTML = body[\'response\'];";
+        ptr += "        }";
+        ptr += "      } else if (this.status == 400) {";
+        ptr += "        statusSection.innerHTML = body[\'response\'];";
+        ptr += "      } else {";
+        ptr += "        statusSection.innerHTML = \"Error\";";
+        ptr += "      }";
+        ptr += "    }";
+        ptr += "    XHR.onerror = () => { alert(\"Server Error\") };";
+        ptr += "    XHR.open(\"POST\", \"http://\" + window.location.hostname + \"/unlock\");";
+        ptr += "    XHR.send(JSON.stringify({ \"pin\": displayPin.innerText }));";
+        ptr += "  }";
+        ptr += "";
+        ptr += "  submitPin.onclick = sendPinCode;";
+        ptr += "</script>";
+        ptr += "</body>";
+        ptr += "</html>";
 
-String htmlNumberPad = "<h1 id=\"displayPin\" style=\"text-align:center;height:30px\"></h1>
-                          <div>
-                            <button onclick=\"addNum(1)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">1</button>
-                            <button onclick=\"addNum(2)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">2</button>
-                            <button onclick=\"addNum(3)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">3</button>
-                          </div>
-                          <div>
-                            <button onclick=\"addNum(4)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">4</button>
-                            <button onclick=\"addNum(5)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">5</button>
-                            <button onclick=\"addNum(6)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">6</button>
-                          </div>
-                          <div>
-                            <button onclick=\"addNum(7)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">7</button>
-                            <button onclick=\"addNum(8)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">8</button>
-                            <button onclick=\"addNum(9)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">9</button>
-                          </div>
-                          <div>
-                            <button onclick=\"clearNums()\" style=\"background-color:red; font-size:1.5em; width:30%;padding:0.5em;\">X</button>
-                            <button onclick=\"addNum(0)\" style=\"font-size:1.5em; width:30%;padding:0.5em;\">0</button>
-                            <button id=\"submitPin\" type=\"button\" style=\"background-color:green;font-size:1.5em; width:30%;padding:0.5em;\">&gt</button>
-                          </div>";
-
-String htmlDeadboltStatus = "<h1 id=\"statusSection\" style=\"text-align:center;color:maroon;\"></h4>";
-
-String htmlJavascript = "<script>
-                          let displayPin = document.getElementById(\"displayPin\");
-                          let submitPin = document.getElementById(\"submitPin\");
-                          let statusSection = document.getElementById(\"statusSection\");
-                          function addNum(num) {
-                            console.log(\"adding: \", num)
-                            if (displayPin.innerHTML.length < 6) {
-                              displayPin.innerHTML += num
-                            }
-                          }
-                          function clearNums() {
-                            console.log(\"clearing\")
-                            displayPin.innerHTML = \"\"
-                          }
-                          function sendPinCode() {
-                            let XHR = new XMLHttpRequest();
-                            XHR.onload = () => {
-                              let body = JSON.parse(this.responseText);
-                              if (this.status == 200) {
-                                if (body[\'response\'] == \"Unlocked\") {
-                                  statusSection.innerHTML = body[\'response\'];
-                                }
-                              } else if (this.status == 400) {
-                                statusSection.innerHTML = body[\'response\'];
-                              } else {
-                                statusSection.innerHTML = \"Error\";
-                              }
-                            }
-                            XHR.onerror = () => { alert(\"Server Error\") };
-                            XHR.open(\"POST\", \"http://\" + window.location.hostname + \"/unlock\");
-                            XHR.send(JSON.stringify({ \"pin\": displayPin.innerText }));
-                          }
-                          submitPin.onclick = sendPinCode;
-                        </script>";
-
-String htmlBottom = "</body>
-                    </html>";
 
 
 
@@ -173,12 +178,7 @@ void loop() {
 }
 
 void handleRoot() {
-    server.send(200, "text/html", 
-                      htmlHead + 
-                      htmlNumberPad + 
-                      htmlDeadboltStatus +
-                      htmlJavascript +
-                      htmlBottom);
+    server.send(200, "text/html", ptr);
 }
 
 void handleUnlock() {

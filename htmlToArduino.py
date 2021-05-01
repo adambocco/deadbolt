@@ -8,7 +8,5 @@ with open("index.html","r") as readFile, open("arduinoHtml","w") as writeFile:
                 line = line[:i] + "\\" + line[i:]
                 i+=1
             i+=1
-        if line.rstrip() == "":
-            continue
-        writeFile.write("" + line.rstrip() + "\n")
+        writeFile.write("ptr += \"" + line.rstrip() +"\";\n")
         
