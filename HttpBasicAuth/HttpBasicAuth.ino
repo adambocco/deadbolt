@@ -12,7 +12,7 @@
 #define STASSID "Honda-ASUS"
 #define STAPSK  "mobydick"
 #define PINCODE "123456"
-#define UNLOCKED_DELAY 6000;
+#define UNLOCKED_DELAY 6000
 
 // const char* ssid = STASSID;
 // const char* password = STAPSK;
@@ -78,6 +78,7 @@ char ptr[] = "<!DOCTYPE html>"
 "  function sendPinCode() {\n"
 "    let XHR = new XMLHttpRequest();\n"
 "    XHR.onload = () => {\n"
+"      console.log(this)\n"
 "      let body = JSON.parse(this.responseText);\n"
 "\n"
 "      if (this.status == 200) {\n"
@@ -98,8 +99,7 @@ char ptr[] = "<!DOCTYPE html>"
 "  submitPin.onclick = sendPinCode;\n"
 "</script>\n"
 "</body>\n"
-"</html>\n"
-
+"</html>\n";
 
 
 

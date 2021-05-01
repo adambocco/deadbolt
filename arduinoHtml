@@ -52,6 +52,7 @@
 "  function sendPinCode() {\n"
 "    let XHR = new XMLHttpRequest();\n"
 "    XHR.onload = () => {\n"
+"      console.log(this)\n"
 "      let body = JSON.parse(this.responseText);\n"
 "\n"
 "      if (this.status == 200) {\n"
