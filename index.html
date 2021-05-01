@@ -38,28 +38,25 @@
   let statusSection = document.getElementById("statusSection");
 
   function addNum(num) {
-    console.log("adding: ", num)
     if (displayPin.innerHTML.length < 6) {
       displayPin.innerHTML += num
     }
   }
 
   function clearNums() {
-    console.log("clearing")
     displayPin.innerHTML = ""
   }
 
   function sendPinCode() {
     let XHR = new XMLHttpRequest();
     XHR.onload = () => {
-      console.log(this)
-      let body = JSON.parse(this.responseText);
+      console.log(XHR.responseText)
+      let body = JSON.parse(XHR.responseText);
 
-      if (this.status == 200) {
-        if (body['response'] == "Unlocked") {
-          statusSection.innerHTML = body['response'];
-        }
-      } else if (this.status == 400) {
+      if (XHR.status == 200) {
+        statusSection.innerHTML = body['response'];
+
+      } else if (XHR.status == 400) {
         statusSection.innerHTML = body['response'];
       } else {
         statusSection.innerHTML = "Error";
