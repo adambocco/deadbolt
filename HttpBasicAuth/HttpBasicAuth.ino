@@ -119,17 +119,21 @@ void handleUnlock() {
 }
 
 bool handlePinAuth() { 
-  if (!server.hasArg("pin")){     //Parameter not found
+  if (!server.hasArg("plain")){     //Parameter not found
     server.send(400, "application/json", "{\"response\":\"Enter a pin\"}"); 
   }
-  else if (server.arg("pin") == PINCODE) {
-    server.send(200, "application/json", "{\"response\":\"Unlocked\"}");  
+  else if (verifyPin(server.arg("plain"))) {
+    server.send(200, "application/json", "{\"response\":\"Unlocked\"}");
     return true;
   } 
   else {
     server.send(400, "application/json", "{\"reponse\": \"Incorrect pin\"}");  
   }
   return false; 
+}
+
+String verifyPin(jsonString) {
+  Serial.println(jsonString);
 }
 
 void handleNotFound(){
