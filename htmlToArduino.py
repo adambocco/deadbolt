@@ -10,5 +10,5 @@ with open("index.html","r") as readFile, open("arduinoHtml","w") as writeFile:
             i+=1
         if line.rstrip() == "":
             continue
-        writeFile.write("\"" + line.rstrip() +"\" + \n")
+        writeFile.write("" + line.rstrip() + "\n")
         
