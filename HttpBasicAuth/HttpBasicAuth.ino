@@ -21,12 +21,6 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 
 ESP8266WebServer server(80);
 
-void handleRoot();              // function prototypes for HTTP handlers
-void handleNotFound();
-void handlePinAuth();
-void handleUnlock();
-void handleRFID();
-
 const char* www_username = "scoped22";
 const char* www_password = "mobydick";
 
@@ -116,68 +110,6 @@ void unlock() {
     digitalWrite(DEADBOLT, LOW);
 }
 
-void setup() {
-
-  Serial.begin(115200);   // Initiate a serial communication
-  SPI.begin();      // Initiate  SPI bus
-  mfrc522.PCD_Init();   // Initiate MFRC522
-
-  // Initialize buzzer and deadbolt signal to ouputs, low
-  pinMode(DEADBOLT, OUTPUT);
-  pinMode(BUZZER, OUTPUT);
-  digitalWrite(DEADBOLT,LOW);
-  digitalWrite(BUZZER,LOW);
-
-
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(STASSID, STAPSK);
-
-  if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    Serial.println("WiFi Connect Failed! Rebooting...");
-    delay(200);
-    ESP.restart();
-  }
-    ArduinoOTA.onStart([]() {
-    Serial.println("Start");
-  });
-  ArduinoOTA.onEnd([]() {
-    Serial.println("\nEnd");
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-    else if (error == OTA_END_ERROR) Serial.println("End Failed");
-  });
-  ArduinoOTA.begin();
-  ArduinoOTA.setHostname("hondaesp");
-  ArduinoOTA.setPassword("mobydick");
-  
-  // <-------- API -------->
-  server.on("/", HTTP_GET, handleRoot);
-
-  server.on("/unlock", HTTP_POST, handleUnlock);
-  
-  server.onNotFound(handleNotFound);
-
-  server.begin();
-  Serial.print("http://");
-  Serial.println(WiFi.localIP());
-
-}
-
-
-void loop() {
-  ArduinoOTA.handle();
-  server.handleClient();
-  handleRFID();
-}
-
 void handleRoot() {
     server.send(200, "text/html", ptr);
 }
@@ -242,3 +174,66 @@ void handleRFID() {
     unlock();
   } 
 }
+
+void setup() {
+
+  Serial.begin(115200);   // Initiate a serial communication
+  SPI.begin();      // Initiate  SPI bus
+  mfrc522.PCD_Init();   // Initiate MFRC522
+
+  // Initialize buzzer and deadbolt signal to ouputs, low
+  pinMode(DEADBOLT, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(DEADBOLT,LOW);
+  digitalWrite(BUZZER,LOW);
+
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(STASSID, STAPSK);
+
+  if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+    Serial.println("WiFi Connect Failed! Rebooting...");
+    delay(200);
+    ESP.restart();
+  }
+    ArduinoOTA.onStart([]() {
+    Serial.println("Start");
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+  ArduinoOTA.begin();
+  ArduinoOTA.setHostname("hondaesp");
+  ArduinoOTA.setPassword("mobydick");
+  
+  // <-------- API -------->
+  server.on("/", HTTP_GET, handleRoot);
+
+  server.on("/unlock", HTTP_POST, handleUnlock);
+  
+  server.onNotFound(handleNotFound);
+
+  server.begin();
+  Serial.print("http://");
+  Serial.println(WiFi.localIP());
+
+}
+
+
+void loop() {
+  ArduinoOTA.handle();
+  server.handleClient();
+  handleRFID();
+}
+
