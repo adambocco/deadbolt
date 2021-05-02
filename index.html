@@ -55,12 +55,14 @@
 
       if (XHR.status == 200) {
         statusSection.innerHTML = body['response'];
-
       } else if (XHR.status == 400) {
         statusSection.innerHTML = body['response'];
       } else {
         statusSection.innerHTML = "Error";
       }
+      setTimeout(()=> {
+          statusSection.innerHTML = "Locked";
+        },6000);
     }
     XHR.onerror = () => { alert("Server Error") };
     XHR.open("POST", "http://" + window.location.hostname + "/unlock");
