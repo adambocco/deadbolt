@@ -54,7 +54,7 @@
       let body = JSON.parse(XHR.responseText);
 
       if (XHR.status == 200) {
-        statusSection.innerHTML = body['response'];
+        statusSection.innerHTML = "Incorrect Pin";
       } else if (XHR.status == 400) {
         statusSection.innerHTML = body['response'];
       } else {

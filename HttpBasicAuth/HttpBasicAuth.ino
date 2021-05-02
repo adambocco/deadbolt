@@ -80,7 +80,7 @@ char ptr[] = "<!DOCTYPE html>"
 "      let body = JSON.parse(XHR.responseText);\n"
 "\n"
 "      if (XHR.status == 200) {\n"
-"        statusSection.innerHTML = body[\'response\'];\n"
+"        statusSection.innerHTML = \"Incorrect Pin\";\n"
 "      } else if (XHR.status == 400) {\n"
 "        statusSection.innerHTML = body[\'response\'];\n"
 "      } else {\n"
@@ -99,6 +99,7 @@ char ptr[] = "<!DOCTYPE html>"
 "</script>\n"
 "</body>\n"
 "</html>\n";
+
 
 
 
