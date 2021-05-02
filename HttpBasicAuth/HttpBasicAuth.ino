@@ -131,24 +131,15 @@ bool handlePinAuth() {
   }
   return false; 
 }
-
-String verifyPin(jsonString) {
-  Serial.println(jsonString);
-  
-  // parse pin from json
-  String parsedPin = "";
-  for (int i = 0; i < jsonString.length(); i++) {
-    if (jsonString[i] == ':') {
-      i += 2;
-      int j = 0;
-      while (jsonString != "\"") {
-        parsedPin[j] += jsonString[i];
-        i++;
-      }
+bool verifyPin(String jsonString) {
+  int j = 0;
+  for (int i = 8; i < 14; i++) {
+    if (jsonString[i] != PINCODE[j]) {
+      return false;
     }
+    j++;
   }
-  Serial.println(parsedPin);
-  return parsedPin;
+  return true;
 }
 
 void handleNotFound(){
@@ -252,4 +243,3 @@ void loop() {
   server.handleClient();
   handleRFID();
 }
-
