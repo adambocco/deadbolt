@@ -134,6 +134,21 @@ bool handlePinAuth() {
 
 String verifyPin(jsonString) {
   Serial.println(jsonString);
+  
+  // parse pin from json
+  String parsedPin = "";
+  for (int i = 0; i < jsonString.length(); i++) {
+    if (jsonString[i] == ':') {
+      i += 2;
+      int j = 0;
+      while (jsonString != "\"") {
+        parsedPin[j] += jsonString[i];
+        i++;
+      }
+    }
+  }
+  Serial.println(parsedPin);
+  return parsedPin;
 }
 
 void handleNotFound(){
@@ -143,7 +158,6 @@ void handleNotFound(){
 void handleRFID() {
     if ( ! mfrc522.PICC_IsNewCardPresent()) 
   {
-    Serial.println("No card");
     return;
   }
   // Select one of the cards
