@@ -14,15 +14,25 @@
 #define PINCODE "123456"
 #define UNLOCKED_DELAY 6000
 
-// const char* ssid = STASSID;
-// const char* password = STAPSK;
+
+int beats[] = { 1, 2, 4};
+int beatsLength = 3;
+//int tones[] = { 1915, 1700, 1519, 1432, 1275, 1136, 1014 };
+//int tonesLength = 7;
+
+// Found at https://pages.mtu.edu/~suits/notefreqs.html
+int tones[] =
+              //{65, 73, 82, 87, 98, 110, 123,
+//              {262, 294, 330, 349, 392, 440, 494, 
+              {523, 587, 659, 698, 784, 880, 988,
+              1047, 1175, 1319, 1397, 1568, 1760, 1976};
+//              2093, 2349, 2637, 2794, 3136, 3520, 3951};
+int tonesLength = 14;
+int tempo = 100;
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 
 ESP8266WebServer server(80);
-
-const char* www_username = "scoped22";
-const char* www_password = "mobydick";
 
 char ptr[] = "<!DOCTYPE html>"
 "<html lang=\"en\">\n"
@@ -103,11 +113,29 @@ char ptr[] = "<!DOCTYPE html>"
 
 
 
+void playTone(int tone, int duration) {
+  for (long i = 0; i < duration * 1000L; i += tone * 2) {
+    digitalWrite(BUZZER, HIGH);
+    delayMicroseconds(tone);
+    digitalWrite(BUZZER, LOW);
+    delayMicroseconds(tone);
+  }
+}
 
+void playMelody(int duration) {
+  int timeCount = 0;
+  while (timeCount < duration) {
+    int beat = beats[random(0, beatsLength)];
+    playTone(tones[random(0, tonesLength)], beat*tempo) ;
+    delay(tempo); 
+    timeCount += (beat * tempo) + tempo;
+  }
+}
 
 void unlock() {
     digitalWrite(DEADBOLT, HIGH);
-    delay(UNLOCKED_DELAY);
+    tone(BUZZER, 400, 6000);
+    playMelody(UNLOCKED_DELAY);
     digitalWrite(DEADBOLT, LOW);
 }
 
@@ -206,6 +234,13 @@ void setup() {
     delay(200);
     ESP.restart();
   }
+
+  if (!MDNS.begin("deadbolt")) {             // Start the mDNS responder for esp8266.local
+    Serial.println("Error setting up MDNS responder!");
+  }
+  MDNS.addService("http", "tcp", 80);
+
+  
     ArduinoOTA.onStart([]() {
     Serial.println("Start");
   });
@@ -245,4 +280,5 @@ void loop() {
   ArduinoOTA.handle();
   server.handleClient();
   handleRFID();
+  MDNS.update();
 }
