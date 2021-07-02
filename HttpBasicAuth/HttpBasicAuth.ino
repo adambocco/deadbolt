@@ -7,6 +7,8 @@
 
 #define BUZZER D8
 #define DEADBOLT D1
+#define RED_LED D0
+#define GREEN_LED D2
 #define RST_PIN D3 
 #define SS_PIN D4
 #define STASSID "Honda-ASUS"
@@ -17,16 +19,11 @@
 
 int beats[] = { 1, 2, 4};
 int beatsLength = 3;
-//int tones[] = { 1915, 1700, 1519, 1432, 1275, 1136, 1014 };
-//int tonesLength = 7;
 
 // Found at https://pages.mtu.edu/~suits/notefreqs.html
-int tones[] =
-              //{65, 73, 82, 87, 98, 110, 123,
-//              {262, 294, 330, 349, 392, 440, 494, 
-              {523, 587, 659, 698, 784, 880, 988,
+int tones[] = {523, 587, 659, 698, 784, 880, 988,
               1047, 1175, 1319, 1397, 1568, 1760, 1976};
-//              2093, 2349, 2637, 2794, 3136, 3520, 3951};
+
 int tonesLength = 14;
 int tempo = 100;
 
@@ -134,9 +131,13 @@ void playMelody(int duration) {
 
 void unlock() {
     digitalWrite(DEADBOLT, HIGH);
-    tone(BUZZER, 400, 6000);
+    digitalWrite(RED_LED, HIGH);
+    digitalWrite(GREEN_LED, LOW);
+    tone(BUZZER, 400, UNLOCKED_DELAY);
     playMelody(UNLOCKED_DELAY);
     digitalWrite(DEADBOLT, LOW);
+      digitalWrite(RED_LED, LOW);
+    digitalWrite(GREEN_LED, HIGH);
 }
 
 void handleRoot() {
@@ -222,8 +223,12 @@ void setup() {
   // Initialize buzzer and deadbolt signal to ouputs, low
   pinMode(DEADBOLT, OUTPUT);
   pinMode(BUZZER, OUTPUT);
+  pinMode(RED_LED, OUTPUT);
+  pinMode(GREEN_LED, OUTPUT);
   digitalWrite(DEADBOLT,LOW);
   digitalWrite(BUZZER,LOW);
+  digitalWrite(RED_LED, LOW);
+  digitalWrite(GREEN_LED, HIGH);
 
 
   WiFi.mode(WIFI_STA);
