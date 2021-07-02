@@ -12,10 +12,10 @@ void oscillate(int pin, int lowTone, int highTone, int durationLow, int duration
   } 
 }
 
-int length = 15; // the number of notes
-char notes[] = "ccggaagffeeddc "; // a space represents a rest
-int beats[] = { 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 1, 2, 1 };
-int tempo = 100;
+int length = 10; // the number of notes
+char notes[] = "bcdbcabga "; // a space represents a rest
+int beats[] = { 1, 1, 2, 2, 2, 2, 2, 2, 3, 12};
+int tempo = 10;
 
 void playTone(int tone, int duration) {
   for (long i = 0; i < duration * 1000L; i += tone * 2) {
@@ -27,8 +27,8 @@ void playTone(int tone, int duration) {
 }
 
 void playNote(char note, int duration) {
-  char names[] = { 'c', 'd', 'e', 'f', 'g', 'a', 'b', 'C' };
-  int tones[] = { 1915, 1700, 1519, 1432, 1275, 1136, 1014, 956 };
+  int beats[] = { 100, 200, 400, 800 };
+  int tones[] = { 1915, 1700, 1519, 1432, 1275, 1136, 1014 };
 
   // play the tone corresponding to the note name
   for (int i = 0; i < 8; i++) {
@@ -113,7 +113,8 @@ void fanfare(int pin) {
 }
 
 void setup() {
-  
+//  
+  pinMode(speakerPin, OUTPUT);
   sampleSound1(BUZZER);
   delay(1000);
   sampleSound2(BUZZER);
@@ -125,15 +126,15 @@ void setup() {
 }
 
 void loop() {
+
   for (int i = 0; i < length; i++) {
     if (notes[i] == ' ') {
-      delay(beats[random(4)] * 20); // rest
+      delay(beats[i] * tempo); // rest
     } else {
-      playNote(notes[random(0,length)], beats[random(4)] * 20);
+      playNote(notes[i], beats[i] * tempo);
     }
 
     // pause between notes
     delay(tempo / 2); 
   }
-
 }
