@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1 id="displayPin" style="text-align:center;height:30px"></h1>
+    <div>
+        <button id="toggleLightsButton" type="button"
+            style="background-color:green;font-size:1.5em; width:30%;padding:0.5em;">&gt</button>
+    </div>
+    <h1 id="lightsStatus" style="text-align:center;color:maroon;">OFF</h4>
+
+        <script>
+            let toggleLightsButton = document.getElementById("toggleLightsButton");
+            let lightsStatus = document.getElementById("lightsStatus");
+
+            function toggleLights() {
+                let XHR = new XMLHttpRequest();
+                XHR.onload = () => {
+                    console.log(XHR.responseText)
+                    let body = JSON.parse(XHR.responseText);
+
+                    if (XHR.status == 200) {
+                        lightsStatus.innerHTML = body["response"];
+                    } else {
+                        lightsStatus.innerHTML = "Error";
+                    }
+                }
+                XHR.onerror = () => { alert("Server Error") };
+                XHR.open("GET", "http://" + window.location.hostname + "/togglelights");
+                XHR.send();
+            }
+
+            toggleLightsButton.onclick = toggleLights;
+        </script>
+</body>
+
+</html>
